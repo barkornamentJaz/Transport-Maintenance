@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Request — Transport Dispatch Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F5F7; --panel:#FFFFFF; --border:#E1E4EA; --text:#1B222E; --muted:#6B7486;
+    --amber:#B8791F; --green:#2F8F5B; --red:#C94B3F; --blue:#2E72B5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'JetBrains Mono', monospace;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk', sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:22px 20px 60px;}
+
+  nav.topnav{display:flex;gap:6px;margin-bottom:22px;}
+  nav.topnav a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:8px 14px;border-radius:6px;border:1px solid transparent;}
+  nav.topnav a.active{color:var(--amber);border-color:var(--border);background:var(--panel);}
+  nav.topnav a:hover{color:var(--text);}
+
+  header{margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:20px;}
+  .brand-eyebrow{color:var(--amber);letter-spacing:.18em;font-size:11px;text-transform:uppercase;margin:0 0 6px;}
+  header h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.01em;}
+  header .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;}
+  .field input, .field select{
+    width:100%;background:#F7F8FA;border:1px solid var(--border);color:var(--text);
+    padding:10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:13px;
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--amber);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .btn{background:var(--amber);color:#FFFFFF;border:none;padding:11px 20px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;width:100%;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.6;cursor:default;}
+
+  .banner{background:#FBE8E5;border:1px solid var(--red);color:#7A2E22;padding:12px 16px;border-radius:6px;font-size:12.5px;margin-bottom:20px;}
+  .banner code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;}
+  .success{background:#E5F5EC;border:1px solid var(--green);color:#1F6B44;padding:12px 16px;border-radius:6px;font-size:12.5px;margin-bottom:20px;display:none;}
+  .success.show{display:block;}
+
+  .section-title{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:34px 0 12px;}
+  .section-title h2{font-size:16px;margin:0;}
+  .section-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .search-box{position:relative;}
+  .search-box input{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 12px 8px 30px;border-radius:6px;font-family:inherit;font-size:12.5px;width:190px;}
+  .search-box input:focus{outline:none;border-color:var(--amber);}
+  .search-box::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0 12px;height:34px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Space Grotesk',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+  .btn-ghost:hover{border-color:var(--text);color:var(--text);}
+
+  .table-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{text-align:left;background:var(--panel);color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.08em;font-size:10px;padding:11px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#F7F8FA;}
+  .cell-no{color:var(--muted);width:28px;}
+  .cell-remark{color:var(--muted);max-width:200px;}
+  .empty-row td{padding:30px 12px;text-align:center;color:var(--muted);}
+
+  select.status-select{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.03em;padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:#EEF0F3;color:var(--text);cursor:pointer;}
+  select.status-select[data-status="DONE"]{color:var(--green);border-color:var(--green);background:#E5F5EC;}
+  select.status-select[data-status="DONE (UNPLANNED)"]{color:var(--green);border-color:var(--green);background:#E5F5EC;}
+  select.status-select[data-status="NOT DONE"]{color:var(--red);border-color:var(--red);background:#FBE8E5;}
+  select.status-select[data-status="ONGOING"]{color:var(--blue);border-color:var(--blue);background:#E7F1FB;}
+  select.status-select[data-status="PENDING"]{color:var(--amber);border-color:var(--amber);background:#FBF1DF;}
+
+  input.inline-edit{background:transparent;border:1px solid transparent;color:var(--text);font-family:inherit;font-size:12.5px;width:100%;padding:2px 4px;border-radius:4px;}
+  input.inline-edit:hover{border-color:var(--border);}
+  input.inline-edit:focus{outline:none;border-color:var(--amber);background:var(--panel);}
+
+  .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;}
+  .icon-btn:hover{color:var(--red);}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:12.5px;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .toast.show{opacity:1;transform:translateY(0);}
+
+  .print-header{display:none;}
+
+  @media(max-width:520px){ .row-2{grid-template-columns:1fr;} }
+  @media(max-width:720px){
+    thead{display:none;}
+    table, tbody, tr, td{display:block;width:100%;}
+    tbody tr{border-bottom:1px solid var(--border);padding:10px 0;}
+    tbody td{border:none;padding:4px 12px;}
+    tbody td:before{content:attr(data-label);display:block;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
+    .search-box input{width:100%;}
+  }
+
+  @media print{
+    nav.topnav, .card, #configBanner, .success, .toast, .icon-btn, .section-actions{display:none !important;}
+    body{background:#fff;color:#000;}
+    .print-header{display:block;margin-bottom:14px;}
+    .print-header h1{font-size:18px;margin:0;}
+    .print-header .sub{color:#444;font-size:11px;margin-top:2px;}
+    table{font-size:10.5px;}
+    input.inline-edit, select.status-select{border:none !important;background:none !important;color:#000 !important;-webkit-appearance:none;appearance:none;padding:0;}
+    .table-wrap{border-color:#999;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="topnav">
+    <a href="index.html">Dashboard</a>
+    <a href="add-request.html" class="active">Add Request</a>
+    <a href="history.html">History</a>
+    <a href="reports.html">Reports</a>
+  </nav>
+
+  <div class="print-header">
+    <h1>Bark Ornament — Transport Dispatch Log</h1>
+    <p class="sub" id="printDateLabel"></p>
+  </div>
+
+  <header>
+    <p class="brand-eyebrow">Bark Ornament (Pvt) Ltd</p>
+    <h1>New transport request</h1>
+    <p class="sub">Logs the entry against the date selected below. Today's list appears underneath once you've saved.</p>
+  </header>
+
+  <div id="configBanner"></div>
+  <div class="success" id="successBanner">Request added — see it in the list below.</div>
+
+  <div class="card">
+    <form id="requestForm">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" name="date" id="dateField" required>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Requested by</label>
+          <input list="requestByList" name="requestBy" required placeholder="e.g. HR EXECUTIVE">
+          <datalist id="requestByList">
+            <option value="HR EXECUTIVE"><option value="MARKETING ASSISTANT">
+            <option value="SENIOR MARKETING EXECUTIVE"><option value="OPERATION EXECUTIVE">
+            <option value="SENIOR OFFICE EXECUTIVE"><option value="ACCOUNT ASSISTANT">
+            <option value="ADMINISTRATIVE EXECUTIVE"><option value="DIRECTOR">
+          </datalist>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input list="locationList" name="location" required placeholder="e.g. PANADURA">
+          <datalist id="locationList">
+            <option value="PANADURA"><option value="COLOMBO"><option value="KATUNAYAKA">
+            <option value="NALLURUWA"><option value="MADAKUMBURA"><option value="WALANA">
+            <option value="BORALESGAMUWA"><option value="RAJAGIRIYA">
+          </datalist>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Time</label>
+          <input name="time" required placeholder="e.g. 5.05 P.M">
+        </div>
+        <div class="field">
+          <label>Vehicle</label>
+          <input list="vehicleList" name="vehicle" required placeholder="e.g. THREE WHEEL">
+          <datalist id="vehicleList">
+            <option value="THREE WHEEL"><option value="LORRY"><option value="PICK ME">
+            <option value="JEEP"><option value="PICK ME FLASH">
+          </datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label>Reason</label>
+        <input name="reason" required placeholder="e.g. STAFF COLLECTION">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Driver name</label>
+          <input name="driverName" placeholder="e.g. KUMARA">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select name="status">
+            <option value="PENDING">PENDING</option>
+            <option value="ONGOING">ONGOING</option>
+            <option value="DONE">DONE</option>
+            <option value="DONE (UNPLANNED)">DONE (UNPLANNED)</option>
+            <option value="NOT DONE">NOT DONE</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Remark</label>
+        <input name="remark" placeholder="optional">
+      </div>
+      <button type="submit" class="btn" id="saveBtn">Save request</button>
+    </form>
+  </div>
+
+  <div class="section-title">
+    <h2>Today's requests</h2>
+    <div class="section-actions">
+      <div class="search-box"><input type="text" id="searchInput" placeholder="Search…"></div>
+      <button class="btn-ghost" id="printBtn">🖶 Print</button>
+      <button class="btn-ghost" id="excelBtn">⇩ Excel</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>No</th><th>Requested By</th><th>Location</th><th>Time</th><th>Reason</th>
+          <th>Vehicle</th><th>Driver</th><th>Status</th><th>Remark</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="empty-row"><td colspan="10">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== CONFIG — paste your Apps Script Web App URL below ====== */
+const SCRIPT_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+/* ================================================================ */
+
+const STATUS_OPTIONS = ['PENDING','ONGOING','DONE','DONE (UNPLANNED)','NOT DONE'];
+let currentRequests = [];
+const $ = (id) => document.getElementById(id);
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function showToast(msg, isError){
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.borderColor = isError ? 'var(--red)' : 'var(--border)';
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2400);
+}
+
+function checkConfig(){
+  if (!SCRIPT_URL || SCRIPT_URL === 'PASTE_YOUR_WEB_APP_URL_HERE'){
+    $('configBanner').innerHTML = `<div class="banner">Not connected yet — deploy the Apps Script backend and paste the Web App URL into the <code>SCRIPT_URL</code> constant near the bottom of this file. You'll need to do this in all four HTML files (index.html, add-request.html, history.html, reports.html).</div>`;
+    return false;
+  }
+  return true;
+}
+
+async function loadTodayList(){
+  const date = todayStr();
+  const label = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  $('printDateLabel').textContent = 'Today — ' + label;
+  if (!checkConfig()) { renderTable([]); return; }
+  $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="10">Loading…</td></tr>`;
+  try {
+    const res = await fetch(`${SCRIPT_URL}?date=${date}`);
+    const data = await res.json();
+    currentRequests = data.sort((a,b) => (a.CreatedAt||'').localeCompare(b.CreatedAt||''));
+    applyFilter();
+  } catch(err){
+    $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="10">Could not load today's list.</td></tr>`;
+  }
+}
+
+function applyFilter(){
+  const q = ($('searchInput').value || '').trim().toLowerCase();
+  if (!q){ renderTable(currentRequests); return; }
+  const filtered = currentRequests.filter(r => {
+    return ['RequestBy','Location','Time','Reason','Vehicle','DriverName','Status','Remark']
+      .some(f => (r[f]||'').toString().toLowerCase().includes(q));
+  });
+  renderTable(filtered);
+}
+
+function renderTable(rows){
+  const body = $('tableBody');
+  if (!rows.length){
+    body.innerHTML = `<tr class="empty-row"><td colspan="10">No requests logged for today yet.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td class="cell-no" data-label="No">${i+1}</td>
+      <td data-label="Requested By">${editableCell(r.ID,'RequestBy', r.RequestBy)}</td>
+      <td data-label="Location">${editableCell(r.ID,'Location', r.Location)}</td>
+      <td data-label="Time">${editableCell(r.ID,'Time', r.Time)}</td>
+      <td data-label="Reason">${editableCell(r.ID,'Reason', r.Reason)}</td>
+      <td data-label="Vehicle">${editableCell(r.ID,'Vehicle', r.Vehicle)}</td>
+      <td data-label="Driver">${editableCell(r.ID,'DriverName', r.DriverName)}</td>
+      <td data-label="Status">
+        <select class="status-select" data-status="${r.Status}" onchange="updateField('${r.ID}','Status',this.value,this)">
+          ${STATUS_OPTIONS.map(s => `<option value="${s}" ${s===r.Status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td class="cell-remark" data-label="Remark">${editableCell(r.ID,'Remark', r.Remark)}</td>
+      <td data-label=""><button class="icon-btn" title="Delete" onclick="deleteRequest('${r.ID}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function editableCell(id, field, value){
+  const safe = (value||'').toString().replace(/"/g,'&quot;');
+  return `<input class="inline-edit" value="${safe}" onchange="updateField('${id}','${field}',this.value,this)">`;
+}
+
+async function updateField(id, field, value, el){
+  try {
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action:'update', id, field, value }) });
+    if (field === 'Status' && el) el.setAttribute('data-status', value);
+    const row = currentRequests.find(r => r.ID === id);
+    if (row) row[field] = value;
+    showToast('Saved');
+  } catch(err){
+    showToast('Could not save change', true);
+  }
+}
+
+async function deleteRequest(id){
+  if (!confirm('Delete this request?')) return;
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'delete', id }) });
+    showToast('Request deleted');
+    loadTodayList();
+  } catch(err){
+    showToast('Could not delete', true);
+  }
+}
+
+function downloadExcel(){
+  const rows = currentRequests;
+  if (!rows.length){ showToast('Nothing to export', true); return; }
+  const data = rows.map((r,i) => ({
+    'No': i+1,
+    'Requested By': r.RequestBy,
+    'Location': r.Location,
+    'Time': r.Time,
+    'Reason': r.Reason,
+    'Vehicle': r.Vehicle,
+    'Driver': r.DriverName,
+    'Status': r.Status,
+    'Remark': r.Remark
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Requests');
+  XLSX.writeFile(wb, `transport-log-${todayStr()}.xlsx`);
+}
+
+$('dateField').value = todayStr();
+checkConfig();
+$('searchInput').addEventListener('input', applyFilter);
+$('printBtn').addEventListener('click', ()=> window.print());
+$('excelBtn').addEventListener('click', downloadExcel);
+
+$('requestForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!checkConfig()) return;
+  const fd = new FormData(e.target);
+  const payload = {
+    action: 'add',
+    date: fd.get('date'),
+    requestBy: fd.get('requestBy'),
+    location: fd.get('location'),
+    time: fd.get('time'),
+    reason: fd.get('reason'),
+    vehicle: fd.get('vehicle'),
+    driverName: fd.get('driverName'),
+    status: fd.get('status'),
+    remark: fd.get('remark')
+  };
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Saving…';
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(payload) });
+    $('successBanner').classList.add('show');
+    e.target.reset();
+    $('dateField').value = todayStr();
+    loadTodayList();
+  } catch(err){
+    $('configBanner').innerHTML = `<div class="banner">Could not save the request. Check your connection and the Web App URL.</div>`;
+  } finally {
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = 'Save request';
+  }
+});
+
+loadTodayList();
+</script>
+</body>
+</html>
