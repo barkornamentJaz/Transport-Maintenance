@@ -126,6 +126,37 @@
     input.inline-edit, select.status-select{border:none !important;background:none !important;color:#000 !important;-webkit-appearance:none;appearance:none;padding:0;}
     .table-wrap{border-color:#999;}
   }
+
+  /* ===== dropdown + "+ New", row buttons, popups ===== */
+  .field-with-add{display:flex;gap:6px;align-items:stretch;}
+  .field-with-add select{flex:1;min-width:0;}
+  .add-opt-btn{background:transparent;border:1px solid var(--border);color:var(--amber);border-radius:6px;padding:0 12px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Space Grotesk',sans-serif;white-space:nowrap;}
+  .add-opt-btn:hover{border-color:var(--amber);background:#FBF1DF;}
+
+  .col-actions{width:1%;white-space:nowrap;}
+  .row-actions{display:flex;gap:6px;white-space:nowrap;}
+  .act-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11.5px;font-weight:600;font-family:'Space Grotesk',sans-serif;}
+  .act-btn.edit:hover{border-color:var(--blue);color:var(--blue);background:#E7F1FB;}
+  .act-btn.del:hover{border-color:var(--red);color:var(--red);background:#FBE8E5;}
+
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(27,34,46,.45);align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-backdrop.open{display:flex;}
+  #optBackdrop{z-index:70;}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.18);}
+  .modal.modal-sm{max-width:380px;}
+  .modal h2{margin:0 0 4px;font-size:18px;}
+  .modal .sub{color:var(--muted);font-size:12.5px;margin:0 0 18px;}
+  .modal .field{margin-bottom:14px;}
+  .modal .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;}
+  .modal .field input,.modal .field select{width:100%;background:#F7F8FA;border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .modal .field input:focus,.modal .field select:focus{outline:none;border-color:var(--amber);}
+  .modal .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .modal .btn{width:auto;}
+  .modal .btn:disabled{opacity:.6;cursor:default;}
+  @media(max-width:720px){ .col-actions{width:auto;} }
+  @media(max-width:520px){ .modal .row-2{grid-template-columns:1fr;} }
+  @media print{ .row-actions,.col-actions,.modal-backdrop,.add-opt-btn{display:none !important;} }
 </style>
 </head>
 <body>
@@ -203,14 +234,95 @@
     <table>
       <thead>
         <tr>
-          <th>No</th><th>Date</th><th>Requested By</th><th>Location</th><th>Time</th><th>Reason</th>
-          <th>Vehicle</th><th>Driver</th><th>Status</th><th>Remark</th><th></th>
+          <th>No</th><th>Date</th><th>Person Name</th><th>Designation</th><th>Location</th><th>Time</th><th>Reason</th>
+          <th>Vehicle</th><th>Driver</th><th>Status</th><th>Remark</th><th class="col-actions">Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr class="empty-row"><td colspan="11">Pick a date range above and click Generate report.</td></tr>
+        <tr class="empty-row"><td colspan="12">Pick a date range above and click Generate report.</td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Edit request popup -->
+<div class="modal-backdrop" id="editBackdrop">
+  <div class="modal">
+    <h2>Edit request</h2>
+    <p class="sub">Change anything, then save changes.</p>
+    <form id="editForm">
+      <div class="row-2">
+        <div class="field"><label>Date</label><input type="date" name="Date" required></div>
+        <div class="field"><label>Time</label><input name="Time" required></div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Person name</label>
+          <div class="field-with-add">
+            <select name="PersonName" data-list="PersonName"></select>
+            <button type="button" class="add-opt-btn" data-add="PersonName">+ New</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Designation</label>
+          <div class="field-with-add">
+            <select name="RequestBy" data-list="Designation" required></select>
+            <button type="button" class="add-opt-btn" data-add="Designation">+ New</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Location</label>
+          <div class="field-with-add">
+            <select name="Location" data-list="Location" required></select>
+            <button type="button" class="add-opt-btn" data-add="Location">+ New</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vehicle</label>
+          <input list="vehicleListEdit" name="Vehicle" required>
+          <datalist id="vehicleListEdit">
+            <option value="THREE WHEEL"><option value="LORRY"><option value="PICK ME">
+            <option value="JEEP"><option value="PICK ME FLASH">
+          </datalist>
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Reason</label><input name="Reason" required></div>
+        <div class="field"><label>Driver name</label><input name="DriverName"></div>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Status</label>
+          <select name="Status">
+            <option value="PENDING">PENDING</option>
+            <option value="ONGOING">ONGOING</option>
+            <option value="DONE">DONE</option>
+            <option value="DONE (UNPLANNED)">DONE (UNPLANNED)</option>
+            <option value="NOT DONE">NOT DONE</option>
+          </select>
+        </div>
+        <div class="field"><label>Remark</label><input name="Remark"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="editCancel">Cancel</button>
+        <button type="submit" class="btn" id="editSave">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add a new dropdown value popup -->
+<div class="modal-backdrop" id="optBackdrop">
+  <div class="modal modal-sm">
+    <h2 id="optTitle">Add new</h2>
+    <p class="sub">Add it once, then pick it from the dropdown any time.</p>
+    <div class="field"><input id="optInput" autocomplete="off"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="optCancel">Cancel</button>
+      <button type="button" class="btn" id="optSave">Save</button>
+    </div>
   </div>
 </div>
 
@@ -274,7 +386,7 @@ async function generateReport(){
   const from = $('fromDate').value;
   const to = $('toDate').value;
   if (!from || !to){ showToast('Pick both a from and to date', true); return; }
-  $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="11">Loading…</td></tr>`;
+  $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="12">Loading…</td></tr>`;
   $('resultsCount').textContent = 'Loading…';
   try {
     const res = await fetch(`${SCRIPT_URL}?from=${from}&to=${to}`);
@@ -288,7 +400,7 @@ async function generateReport(){
     $('printRangeLabel').dataset.range = from === to ? fromLabel : `${fromLabel} — ${toLabel}`;
     applyFilter();
   } catch(err){
-    $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="11">Could not load data. Check the connection to the sheet.</td></tr>`;
+    $('tableBody').innerHTML = `<tr class="empty-row"><td colspan="12">Could not load data. Check the connection to the sheet.</td></tr>`;
     $('resultsCount').textContent = '';
     showToast('Failed to load report', true);
   }
@@ -311,7 +423,7 @@ function getFilteredRows(){
   return currentRequests.filter(r => {
     if (statusFilter !== 'ALL' && (r.Status||'') !== statusFilter) return false;
     if (!q) return true;
-    return ['RequestBy','Location','Time','Reason','Vehicle','DriverName','Status','Remark','Date']
+    return ['PersonName','RequestBy','Location','Time','Reason','Vehicle','DriverName','Status','Remark','Date']
       .some(f => (r[f]||'').toString().toLowerCase().includes(q));
   });
 }
@@ -341,7 +453,8 @@ document.querySelectorAll('#statusFilter button').forEach(btn => {
 
 function formatDateCell(v){
   if (!v) return '';
-  const d = new Date(v);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
   if (isNaN(d.getTime())) return v;
   return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
@@ -349,33 +462,29 @@ function formatDateCell(v){
 function renderTable(rows){
   const body = $('tableBody');
   if (!rows.length){
-    body.innerHTML = `<tr class="empty-row"><td colspan="11">No matching requests in this range.</td></tr>`;
+    body.innerHTML = `<tr class="empty-row"><td colspan="12">No matching requests in this range.</td></tr>`;
     return;
   }
   body.innerHTML = rows.map((r, i) => `
     <tr>
       <td class="cell-no" data-label="No">${i+1}</td>
       <td class="cell-date" data-label="Date">${formatDateCell(r.Date)}</td>
-      <td data-label="Requested By">${editableCell(r.ID,'RequestBy', r.RequestBy)}</td>
-      <td data-label="Location">${editableCell(r.ID,'Location', r.Location)}</td>
-      <td data-label="Time">${editableCell(r.ID,'Time', r.Time)}</td>
-      <td data-label="Reason">${editableCell(r.ID,'Reason', r.Reason)}</td>
-      <td data-label="Vehicle">${editableCell(r.ID,'Vehicle', r.Vehicle)}</td>
-      <td data-label="Driver">${editableCell(r.ID,'DriverName', r.DriverName)}</td>
+      <td data-label="Person Name">${esc(r.PersonName)}</td>
+      <td data-label="Designation">${esc(r.RequestBy)}</td>
+      <td data-label="Location">${esc(r.Location)}</td>
+      <td data-label="Time">${esc(r.Time)}</td>
+      <td data-label="Reason">${esc(r.Reason)}</td>
+      <td data-label="Vehicle">${esc(r.Vehicle)}</td>
+      <td data-label="Driver">${esc(r.DriverName)}</td>
       <td data-label="Status">
         <select class="status-select" data-status="${r.Status}" onchange="updateField('${r.ID}','Status',this.value,this)">
           ${STATUS_OPTIONS.map(s => `<option value="${s}" ${s===r.Status?'selected':''}>${s}</option>`).join('')}
         </select>
       </td>
-      <td class="cell-remark" data-label="Remark">${editableCell(r.ID,'Remark', r.Remark)}</td>
-      <td data-label=""><button class="icon-btn" title="Delete" onclick="deleteRequest('${r.ID}')">✕</button></td>
+      <td class="cell-remark" data-label="Remark">${esc(r.Remark)}</td>
+      <td class="col-actions" data-label=""><div class="row-actions"><button class="act-btn edit" onclick="openEdit('${r.ID}')">Edit</button><button class="act-btn del" onclick="deleteRequest('${r.ID}')">Delete</button></div></td>
     </tr>
   `).join('');
-}
-
-function editableCell(id, field, value){
-  const safe = (value||'').toString().replace(/"/g,'&quot;');
-  return `<input class="inline-edit" value="${safe}" onchange="updateField('${id}','${field}',this.value,this)">`;
 }
 
 async function updateField(id, field, value, el){
@@ -409,7 +518,8 @@ function downloadExcel(){
   const data = rows.map((r,i) => ({
     'No': i+1,
     'Date': formatDateCell(r.Date),
-    'Requested By': r.RequestBy,
+    'Person Name': r.PersonName,
+    'Designation': r.RequestBy,
     'Location': r.Location,
     'Time': r.Time,
     'Reason': r.Reason,
@@ -438,6 +548,152 @@ $('excelBtn').addEventListener('click', downloadExcel);
   setRange(toDateStr(start), todayStr());
   generateReport();
 })();
+
+/* ===================== Dropdown lists + Edit / Delete buttons ===================== */
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+const LIST_LABELS = { PersonName:'person name', Designation:'designation', Location:'location' };
+const EDIT_FIELDS = ['Date','Time','PersonName','RequestBy','Location','Vehicle','Reason','DriverName','Status','Remark'];
+let LISTS = { PersonName: [], Designation: [], Location: [] };
+let optTarget = null;
+let editingId = null;
+
+function fillSelect(sel, forceValue){
+  const type = sel.dataset.list;
+  const current = forceValue !== undefined ? forceValue : sel.value;
+  const values = (LISTS[type] || []).slice();
+  if (current && values.indexOf(current) === -1) values.push(current);
+  sel.innerHTML = '<option value="">Select…</option>' +
+    values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+  sel.value = current || '';
+}
+
+function fillAllSelects(){
+  document.querySelectorAll('select[data-list]').forEach(function(s){ fillSelect(s); });
+}
+
+async function loadLists(){
+  if (!checkConfig()) return;
+  try {
+    const res = await fetch(SCRIPT_URL + '?lists=1');
+    const data = await res.json();
+    if (Array.isArray(data)) {   // old Code.gs still deployed: it returns requests, not lists
+      $('configBanner').innerHTML = '<div class="banner">The dropdown lists and the Edit button need the updated <code>Code.gs</code>. Paste it into Apps Script, then Deploy → Manage deployments → edit → New version → Deploy.</div>';
+      return;
+    }
+    LISTS = { PersonName: data.PersonName || [], Designation: data.Designation || [], Location: data.Location || [] };
+    fillAllSelects();
+  } catch(err){
+    showToast('Could not load the dropdown lists', true);
+  }
+}
+
+/* ---- "+ New" popup ---- */
+function openOpt(type, select){
+  optTarget = { type: type, select: select };
+  $('optTitle').textContent = 'Add new ' + LIST_LABELS[type];
+  $('optInput').value = '';
+  $('optInput').placeholder = 'Type the ' + LIST_LABELS[type];
+  $('optBackdrop').classList.add('open');
+  setTimeout(function(){ $('optInput').focus(); }, 30);
+}
+function closeOpt(){ $('optBackdrop').classList.remove('open'); optTarget = null; }
+
+async function saveOpt(){
+  const value = $('optInput').value.trim().toUpperCase();
+  if (!value){ showToast('Type a value first', true); return; }
+  if (!optTarget) return;
+  const type = optTarget.type, select = optTarget.select;
+  if ((LISTS[type] || []).indexOf(value) === -1){
+    $('optSave').disabled = true;
+    try {
+      const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'addOption', type: type, value: value }) });
+      const out = await res.json();
+      if (!out.success) throw new Error(out.error || 'failed');
+      LISTS[type] = (LISTS[type] || []).concat(value).sort();
+    } catch(err){
+      showToast('Could not save - update Code.gs and redeploy it', true);
+      $('optSave').disabled = false;
+      return;
+    }
+    $('optSave').disabled = false;
+  }
+  fillAllSelects();
+  select.value = value;
+  closeOpt();
+  showToast('Added: ' + value);
+}
+
+/* ---- Edit popup ---- */
+function toInputDate(v){
+  if (!v) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function openEdit(id){
+  const r = currentRequests.find(function(x){ return x.ID === id; });
+  if (!r) return;
+  editingId = id;
+  const f = $('editForm');
+  EDIT_FIELDS.forEach(function(k){
+    const el = f.elements[k];
+    if (!el) return;
+    let v = r[k] == null ? '' : String(r[k]);
+    if (k === 'Date') v = toInputDate(r[k]);
+    if (el.tagName === 'SELECT' && el.dataset.list) fillSelect(el, v);
+    else el.value = v;
+  });
+  $('editBackdrop').classList.add('open');
+}
+function closeEdit(){ $('editBackdrop').classList.remove('open'); editingId = null; }
+
+$('editForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  if (!editingId) return;
+  const f = e.target, fields = {};
+  EDIT_FIELDS.forEach(function(k){ fields[k] = f.elements[k].value.trim(); });
+  $('editSave').disabled = true;
+  $('editSave').textContent = 'Saving…';
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'updateMany', id: editingId, fields: fields }) });
+    const out = await res.json();
+    if (!out.success) throw new Error(out.error || 'failed');
+    closeEdit();
+    showToast('Changes saved');
+    generateReport();
+  } catch(err){
+    showToast('Could not save - update Code.gs and redeploy it', true);
+  } finally {
+    $('editSave').disabled = false;
+    $('editSave').textContent = 'Save changes';
+  }
+});
+
+document.querySelectorAll('.add-opt-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    openOpt(btn.dataset.add, btn.parentElement.querySelector('select'));
+  });
+});
+$('optSave').addEventListener('click', saveOpt);
+$('optCancel').addEventListener('click', closeOpt);
+$('optInput').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); saveOpt(); } });
+$('editCancel').addEventListener('click', closeEdit);
+$('optBackdrop').addEventListener('click', function(e){ if (e.target.id === 'optBackdrop') closeOpt(); });
+$('editBackdrop').addEventListener('click', function(e){ if (e.target.id === 'editBackdrop') closeEdit(); });
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  if ($('optBackdrop').classList.contains('open')) closeOpt(); else closeEdit();
+});
+
+fillAllSelects();
+loadLists();
 </script>
 </body>
 </html>
